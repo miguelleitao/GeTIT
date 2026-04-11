@@ -41,6 +41,8 @@ $(OBJ_DIR)/%.o: %.c getit.h
 	@printf "$(BLUE)Building C object $@$(RESET)\n"
 	@$(CC) -c $(CFLAGS) $< -o $@ 
 
+${OBJ_DIR}/getit_l1.o: linmath/linmath.h 
+
 submodules:
 	git submodule update --init ----remote
  

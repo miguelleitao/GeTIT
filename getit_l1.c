@@ -14,23 +14,37 @@ void getit_getState(getit_state *state) {
 
     double tNow   = (double)now-(double)initTime;
     double tDelta = (double)now-(double)state->timestamp;
-    for( int i=0 ; i<3 ; i++ ) 
-        state->velocity[i] = 10. * sin(tNow/10./(float)(i+1));
+    state->timestamp = now;
+    for( int i=0 ; i<3 ; i++ ) {
+        state->velocity[i]         = 0.5 * sin(tNow/10./(float)(i+1));
+        state->angular_velocity[i] = 0.1 * sin(tNow/ 5./(float)(i+1));
+	}
+	state->velocity[1] *= 10.;
+    state->orientation[0] *= 0.1;
+    state->orientation[1] *= 0.2;
+	
     
     quat q;
     quat_make_from_euler_vec(q, state->orientation);
-    mat4x4 m;
-    quat_to_mat4x4(m, q);
-    vec3 v;
-    vec3_scaled(v, state->velocity, tDelta);
-    vec4 vh;
-    vec4f_from_vec3(vh, v);
-    vec4 d;
-    // R(euler) * vel_body * dt
-    mat4x4_mul_vec4(d, m, vh);
-    vec3_add(state->position, d);
+ 
+    quat wq;
+    quat_set_vec(wq, 0., state->angular_velocity);
 
-    state->timestamp = now;
+    quat dq;
+    quat_muled(dq, q, wq);   	// q ⊗ ω
+    quat_mul_scalar(dq, 0.5f * tDelta);
+
+    quat_add(q, dq);
+    quat_normalize(q);
+    
+    quat_to_euler(state->orientation, q);
+    
+    // --- posição ---
+	vec3 v_world;
+	quat_mul_vec3(v_world, q, state->velocity);
+
+	vec3_scale(v_world, tDelta);
+	vec3_add(state->position, v_world);
 }
 
 int main() {
@@ -72,6 +86,7 @@ int main() {
     unsigned long int seq = 0;
     
     initTime = time(NULL);
+    printf("InitTime: %ld\n", initTime);
 
     while (1) {
         // State update
