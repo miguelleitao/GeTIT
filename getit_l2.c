@@ -23,7 +23,7 @@ int NumAluno=1234567;
 void on_connect(struct mosquitto *mosq, void *obj, int reason_code)
 {
 	(void)obj;
-	printf("on_connect\n");
+	//printf("on_connect\n");
     int rc;
     /* Print out the connection result. mosquitto_connack_string() produces an
      * appropriate string for MQTT v3.x clients, the equivalent for MQTT v5.0
@@ -43,7 +43,9 @@ void on_connect(struct mosquitto *mosq, void *obj, int reason_code)
      */
 
 	//PGSCE-PRSIEM
-	rc = mosquitto_subscribe(mosq, NULL, "PRSIEM/1234567/bee/#", 1);
+	char topic[256];
+	snprintf(topic, sizeof topic, "PRSIEM/%d/+/cmd/#", NumAluno);
+	rc = mosquitto_subscribe(mosq, NULL, topic, 1);
 	if ( rc != MOSQ_ERR_SUCCESS ) {
 		fprintf(stderr, "Error subscribing: %s\n", mosquitto_strerror(rc));
 		// disconnect if we were unable to subscribe
@@ -59,32 +61,12 @@ void on_message(struct mosquitto *mosq, void *userdata, const struct mosquitto_m
 	(void)mosq;
 	(void)userdata;
 	
-	if (debug>2)
-        printf("on_message Recebeu msg:%s %s (%d), retained:%d\n", msg->topic,
+    printf("on_message Recebeu msg:%s %s (%d), retained:%d\n", msg->topic,
             (const char *)msg->payload, msg->payloadlen, msg->retain);
     /*
      * Process retained and new messages
      */
-    char beeMsgPrefix[] = "PRSIEM/1234567/bee";
-    if ( ! strncmp(msg->topic, beeMsgPrefix, strlen(beeMsgPrefix) ) ) {
-		if (debug>2)
-             printf("Valid prefix\n");
-        char *zName = msg->topic + strlen(beeMsgPrefix);
-        if ( zName ) zName++;
-        if (debug>2)
-             printf("zName:%s\n", zName);
-        if ( *zName ) {
-            int zIdx = atoi(zName);
-            if (debug>2) printf(" Bee %d\n", zIdx);
-            //if ( zIdx != MyId ) return;
-            zName = strchr(zName,'/');
-            if ( zName ) {
-                zName++;
-                //if ( ! strcmp(zName, "cmd") ) 
-            }
-        }
-        return;
-    }
+
 }
 
 /* Callback called when the broker sends a SUBACK in response to a SUBSCRIBE. */
@@ -183,10 +165,10 @@ int getit_publishState(getit_state s) {
 }
 
 int main() {
-	if (gethostname(hostname, sizeof(hostname)) != 0) 
+	if (gethostname(hostname, sizeof(hostname)) != 0) {
         perror("gethostname");
-    else 
-		strcpy(hostname, "Unknown");
+        strcpy(hostname, "Unknown");
+	}
     int fd;
     while ((fd = shm_open(SHM_NAME, O_RDONLY, 0666)) < 0) {
 		perror("waiting for shm...");
