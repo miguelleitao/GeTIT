@@ -52,7 +52,7 @@ ${OBJ_DIR}/getit_l1.o: linmath/linmath.h
 ${OBJ_DIR}/getit_l2.o: .config.h
 
 submodules:
-	git submodule update --init ----remote
+	git submodule update --init --remote
  
 clean:
 	-rm -rf ${PROGS}
