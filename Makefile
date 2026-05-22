@@ -30,18 +30,26 @@ ${OBJ_DIR}:
 	mkdir -p $@
 
 progs: ${BIN_DIR} ${OBJ_DIR} ${BIN_PROGS}
+	echo $^
 	@echo "Done."
 
-${BIN_DIR}/%: $(OBJ_DIR)/%.o
+${BIN_DIR}/getit_l1: $(OBJ_DIR)/getit_l1.o
 	@printf "${GREEN}Building executable $@${RESET}\n"
 	@$(CC) -Os -o $@ $^ -lm 2>&1
 	@$(STRIP) $@
 
-$(OBJ_DIR)/%.o: %.c getit.h
+${BIN_DIR}/getit_l2: $(OBJ_DIR)/getit_l2.o
+	@printf "${GREEN}Building executable $@${RESET}\n"
+	@$(CC) -Os -o $@ $^ -lm -l mosquitto 2>&1
+	@$(STRIP) $@
+
+
+$(OBJ_DIR)/%.o: %.c getit.h 
 	@printf "$(BLUE)Building C object $@$(RESET)\n"
 	@$(CC) -c $(CFLAGS) $< -o $@ 
 
 ${OBJ_DIR}/getit_l1.o: linmath/linmath.h 
+${OBJ_DIR}/getit_l2.o: .config.h
 
 submodules:
 	git submodule update --init ----remote

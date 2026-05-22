@@ -16,7 +16,7 @@
 typedef struct {
     time_t timestamp;
     vec3 position;
-    vec3 orientation;
+    quat orientation;
     vec3 velocity;
     vec3 angular_velocity;
     float temperature;

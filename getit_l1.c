@@ -98,7 +98,7 @@ int main() {
 
         // sinalizar consumidor
         sem_post(sem);
-        getit_printState(gState);
+        //getit_printState(gState);
 
         sleep(1);
     }
