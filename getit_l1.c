@@ -8,6 +8,7 @@
 #include "getit.h"
 
 time_t initTime = 0L;
+int debug = 1;
 
 void getit_getState(getit_state *state) {
     time_t now = time(NULL);
@@ -47,7 +48,14 @@ void getit_getState(getit_state *state) {
 	vec3_add(state->position, v_world);
 }
 
-int main() {
+int main(int argc, char **argv) {
+	if ( argc>1 && argv[1][0]=='-' ) {
+		if ( argv[1][1]=='b' ) {
+			debug = 0;
+			int pid = fork();
+			if ( pid ) return 0;
+		}
+	}
     int fd = shm_open(SHM_NAME, O_CREAT | O_RDWR, 0666);
     if (fd < 0) { perror("shm_open"); return 1; }
 

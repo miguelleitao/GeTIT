@@ -7,7 +7,7 @@
 #include <mosquitto.h>
 #include "getit.h"
 
-#include ".config.h"
+#include "config.h"
 
 int debug = 10;
 
@@ -15,7 +15,9 @@ struct mosquitto *mosq = NULL;
 
 char hostname[256];
 
-int NumAluno=1234567;
+#ifndef NumAluno
+#define NumAluno 1234567
+#endif
 
 
 
@@ -43,16 +45,25 @@ void on_connect(struct mosquitto *mosq, void *obj, int reason_code)
      */
 
 	//PGSCE-PRSIEM
-	char topic[256];
-	snprintf(topic, sizeof topic, "PRSIEM/%d/+/cmd/#", NumAluno);
-	rc = mosquitto_subscribe(mosq, NULL, topic, 1);
+	char topic[280];
+	snprintf(topic, sizeof topic, "PRSIEM/%d/%s/cmd/#", NumAluno, hostname);
+	rc = mosquitto_subscribe(mosq, NULL, topic, 0);
 	if ( rc != MOSQ_ERR_SUCCESS ) {
 		fprintf(stderr, "Error subscribing: %s\n", mosquitto_strerror(rc));
 		// disconnect if we were unable to subscribe
 		mosquitto_disconnect(mosq);
 	}
 	else
-	    printf("Subscrition requested.\n");
+	    if ( debug>4 ) printf("Subscrition requested.\n");
+	snprintf(topic, sizeof topic, "PRSIEM/%d/all/cmd/#", NumAluno);
+	rc = mosquitto_subscribe(mosq, NULL, topic, 0);
+	if ( rc != MOSQ_ERR_SUCCESS ) {
+		fprintf(stderr, "Error subscribing: %s\n", mosquitto_strerror(rc));
+		// disconnect if we were unable to subscribe
+		mosquitto_disconnect(mosq);
+	}
+	else
+	    if ( debug>4 ) printf("Subscrition requested.\n");
 }
 
 
@@ -61,7 +72,7 @@ void on_message(struct mosquitto *mosq, void *userdata, const struct mosquitto_m
 	(void)mosq;
 	(void)userdata;
 	
-    printf("on_message Recebeu msg:%s %s (%d), retained:%d\n", msg->topic,
+    printf("Recebeu msg:%s %s (%d), retained:%d\n", msg->topic,
             (const char *)msg->payload, msg->payloadlen, msg->retain);
     /*
      * Process retained and new messages
@@ -140,13 +151,13 @@ int mqttPublish(const char *topic, const char* msg, int qos, int retain) {
      * qos - publish with MQTT QoS
      * retain = false - do not use the retained message feature for this message
      */
-    if (debug>27) printf("mqttPub '%s', '%s'\n", topic, msg);
+    if (debug>3) printf("mqttPub '%s', '%s'\n", topic, msg);
     int rc = mosquitto_publish(mosq, NULL, topic, strlen(msg), msg, qos, retain);
     if (rc != MOSQ_ERR_SUCCESS) {
         fprintf(stderr, "Error publishing to MQTT broker: %s\n", mosquitto_strerror(rc));
         return false;
     }
-    if (debug>72) printf("  mqttPub success '%s', '%s'\n", topic, msg);
+    if (debug>3) printf("  mqttPub success '%s', '%s'\n", topic, msg);
     return true;
 }
 
@@ -164,7 +175,14 @@ int getit_publishState(getit_state s) {
 	return res;
 }
 
-int main() {
+int main(int argc, char** argv) {
+	if ( argc>1 && argv[1][0]=='-' ) {
+		if ( argv[1][1]=='b' ) {
+			debug = 0;
+			int pid = fork();
+			if ( pid ) return 0;
+		}
+	}
 	if (gethostname(hostname, sizeof(hostname)) != 0) {
         perror("gethostname");
         strcpy(hostname, "Unknown");
@@ -174,21 +192,21 @@ int main() {
 		perror("waiting for shm...");
 		sleep(1);
 	}
-    printf("got shm\n");
+    if ( debug>3 ) printf("got shm\n");
     shared_state_t *shared = mmap(NULL, sizeof(shared_state_t),
                                   PROT_READ,
                                   MAP_SHARED, fd, 0);
     if (shared == MAP_FAILED) {
         perror("mmap"); return 1;
     }
-    printf("got mmap\n");
+    if ( debug>3 ) printf("got mmap\n");
     
 	sem_t *sem;
 	while ((sem = sem_open(SEM_NAME, 0)) == SEM_FAILED) {
 		perror("waiting for semaphore...");
 		sleep(1);
 	}
-    printf("got sem\n");
+    if ( debug>3 ) printf("got sem\n");
     
     mqttConnect();
     
@@ -207,7 +225,7 @@ int main() {
 
         getit_state s = shared->state;
 
-		//getit_printState(s);
+		if (debug) getit_printState(s);
 		getit_publishState(s);
     }
 
