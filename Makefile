@@ -43,7 +43,6 @@ ${BIN_DIR}/getit_l2: $(OBJ_DIR)/getit_l2.o
 	@$(CC) -Os -o $@ $^ -lm -l mosquitto 2>&1
 	@$(STRIP) $@
 
-
 $(OBJ_DIR)/%.o: %.c getit.h 
 	@printf "$(BLUE)Building C object $@$(RESET)\n"
 	@$(CC) -c $(CFLAGS) $< -o $@ 
@@ -51,8 +50,11 @@ $(OBJ_DIR)/%.o: %.c getit.h
 ${OBJ_DIR}/getit_l1.o: linmath/linmath.h 
 ${OBJ_DIR}/getit_l2.o: config.h
 
-submodules:
+submodules_git:
 	git submodule update --init --remote
+
+submodules:
+	git clone https://github.com/miguelleitao/linmath.git
  
 clean:
 	-rm -rf ${PROGS}
