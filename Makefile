@@ -30,7 +30,6 @@ ${OBJ_DIR}:
 	mkdir -p $@
 
 progs: ${BIN_DIR} ${OBJ_DIR} ${BIN_PROGS}
-	echo $^
 	@echo "Done."
 
 ${BIN_DIR}/getit_l1: $(OBJ_DIR)/getit_l1.o
