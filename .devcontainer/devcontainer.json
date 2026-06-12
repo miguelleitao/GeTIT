@@ -1,0 +1,5 @@
+{
+  "name": "GeTIT dev lab",
+  "image": "mcr.microsoft.com/devcontainers/cpp:ubuntu",
+  "postCreateCommand": "sudo apt update && sudo apt install -y mosquitto mosquitto-dev"
+}
